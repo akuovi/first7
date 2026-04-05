@@ -1,0 +1,39 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import BibleLayout from '../../../layouts/BibleLayout.astro';
+
+type BibleEntry = CollectionEntry<'bible'>;
+
+export async function getStaticPaths() {
+  const entries = await getCollection('bible');
+
+  return entries.map((entry) => ({
+    params: {
+      book: entry.data.book.toLowerCase(),
+      chapter: entry.data.chapter.toString()
+    },
+    props: { entry }
+  }));
+}
+
+const { entry } = Astro.props as { entry: BibleEntry };
+
+//  REQUIRED for MDX
+const { Content } = await render(entry);
+---
+
+<BibleLayout 
+  currentBook={entry.data.book.toLowerCase()} 
+  currentChapter={entry.data.chapter}
+>
+  
+  <Fragment slot="header">
+    <h1 class="text-3xl font-semibold capitalize">
+      {entry.data.book} {entry.data.chapter}
+    </h1>
+  </Fragment>
+
+  <!--  THIS RENDERS YOUR MDX -->
+  <Content />
+
+</BibleLayout>

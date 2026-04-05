@@ -1,0 +1,213 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import VerseLink from '../../../components/VerseLink.astro';
+import ReadingLayout from '../../../layouts/ReadingLayout.astro';
+
+type StartEntry = CollectionEntry<'start'>;
+
+export async function getStaticPaths() {
+  const entries = await getCollection('start');
+
+  return entries.map((entry) => ({
+    params: {
+      plan: entry.data.plan,
+      day: `day-${entry.data.day}`
+    },
+    props: { entry }
+  }));
+}
+
+const { entry } = Astro.props as { entry: StartEntry };
+
+const allEntries = await getCollection('start');
+const planEntries = allEntries
+  .filter((candidate) => candidate.data.plan === entry.data.plan)
+  .sort((a, b) => a.data.day - b.data.day);
+
+const currentIndex = planEntries.findIndex((candidate) => candidate.id === entry.id);
+const previousEntry = currentIndex > 0 ? planEntries[currentIndex - 1] : undefined;
+const nextEntry = currentIndex >= 0 ? planEntries[currentIndex + 1] : undefined;
+
+const { Content } = await render(entry);
+const plan = entry.data.plan;
+const day = entry.data.day;
+const totalDays = planEntries.length;
+---
+
+<ReadingLayout title={entry.data.title}>
+  <div class="mb-6 rounded-xl bg-[var(--color-primary)]/10 p-4">
+    <p class="text-sm uppercase tracking-wide text-[var(--color-muted)]">
+      Key Verse
+    </p>
+
+    <p class="mt-1 text-lg font-medium">
+      <VerseLink verse={entry.data.verse} />
+    </p>
+  </div>
+
+  <div class="space-y-6 text-lg leading-relaxed">
+    <Content />
+  </div>
+
+  <div
+    id="celebration-box"
+    class="mt-10 hidden rounded-xl border bg-[var(--color-primary)]/10 p-6 text-center"
+  >
+    <p class="text-sm text-[var(--color-muted)]">Congratulations</p>
+    <h2 class="mt-2 text-2xl font-semibold">You completed this plan!</h2>
+    <p class="mt-2 text-[var(--color-muted)]">
+      Keep going, your journey is just beginning.
+    </p>
+  </div>
+
+  <div class="mt-8 rounded-xl border p-4">
+    <p class="text-sm text-[var(--color-muted)]">Streak</p>
+    <p id="streak-count" class="text-2xl font-semibold">0 days</p>
+  </div>
+
+  <div class="mt-10 flex items-center justify-between">
+    <button
+      id="complete-btn"
+      class="rounded-lg bg-[var(--color-primary)] px-5 py-2 text-white"
+      type="button"
+    >
+      Mark as Complete
+    </button>
+
+    <a id="next-btn" class="hidden rounded-lg border px-4 py-2 text-sm">
+      Next ->
+    </a>
+  </div>
+
+  <div class="mt-10 flex justify-between text-sm text-[var(--color-muted)]">
+    {previousEntry ? (
+      <a href={`/plans/${plan}/day-${previousEntry.data.day}`}>{'<-'} Day {previousEntry.data.day}</a>
+    ) : (
+      <span />
+    )}
+
+    {nextEntry ? (
+      <a href={`/plans/${plan}/day-${nextEntry.data.day}`}>Day {nextEntry.data.day} -></a>
+    ) : (
+      <span />
+    )}
+  </div>
+
+  <script is:inline define:vars={{ plan, day, totalDays }}>
+    const getSavedDays = (storageKey) => {
+      try {
+        const rawValue = localStorage.getItem(storageKey);
+        const parsed = rawValue ? JSON.parse(rawValue) : [];
+        return Array.isArray(parsed) ? parsed.filter((value) => Number.isInteger(value)) : [];
+      } catch {
+        return [];
+      }
+    };
+
+    const storageKey = `first7-${plan}`;
+    let savedDays = getSavedDays(storageKey);
+
+    const completeButton = document.getElementById('complete-btn');
+    const nextButton = document.getElementById('next-btn');
+    const celebrationBox = document.getElementById('celebration-box');
+    const streakCount = document.getElementById('streak-count');
+
+    const button =
+      completeButton instanceof HTMLButtonElement ? completeButton : null;
+    const nextLink = nextButton instanceof HTMLAnchorElement ? nextButton : null;
+
+    if (streakCount) {
+      streakCount.textContent = `${savedDays.length} day${savedDays.length === 1 ? '' : 's'}`;
+    }
+
+    const launchConfetti = () => {
+      const canvasElement = document.getElementById('confetti-canvas');
+
+      if (!(canvasElement instanceof HTMLCanvasElement)) {
+        return;
+      }
+
+      const context = canvasElement.getContext('2d');
+
+      if (!context) {
+        return;
+      }
+
+      canvasElement.width = window.innerWidth;
+      canvasElement.height = window.innerHeight;
+
+      const pieces = Array.from({ length: 120 }, () => ({
+        x: Math.random() * canvasElement.width,
+        y: Math.random() * canvasElement.height - canvasElement.height,
+        size: Math.random() * 6 + 4,
+        speed: Math.random() * 3 + 2,
+        color: `hsl(${Math.random() * 360}, 70%, 60%)`
+      }));
+
+      let frameId = 0;
+
+      const draw = () => {
+        context.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+        pieces.forEach((piece) => {
+          piece.y += piece.speed;
+          context.fillStyle = piece.color;
+          context.fillRect(piece.x, piece.y, piece.size, piece.size);
+
+          if (piece.y > canvasElement.height) {
+            piece.y = -10;
+          }
+        });
+
+        frameId = window.requestAnimationFrame(draw);
+      };
+
+      draw();
+
+      window.setTimeout(() => {
+        window.cancelAnimationFrame(frameId);
+        context.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      }, 3000);
+    };
+
+    const showCompletionState = () => {
+      if (button) {
+        button.textContent = 'Completed ';
+        button.disabled = true;
+      }
+
+      if (day < totalDays && nextLink) {
+        nextLink.href = `/plans/${plan}/day-${day + 1}`;
+        nextLink.classList.remove('hidden');
+      } else {
+        celebrationBox?.classList.remove('hidden');
+        launchConfetti();
+      }
+    };
+
+    if (savedDays.includes(day)) {
+      showCompletionState();
+    }
+
+    button?.addEventListener('click', () => {
+      if (!savedDays.includes(day)) {
+        savedDays = [...savedDays, day].sort((left, right) => left - right);
+        localStorage.setItem(storageKey, JSON.stringify(savedDays));
+      }
+
+      if (streakCount) {
+        streakCount.textContent = `${savedDays.length} day${savedDays.length === 1 ? '' : 's'}`;
+      }
+
+      showCompletionState();
+
+      if (day < totalDays) {
+        window.setTimeout(() => {
+          window.location.href = `/plans/${plan}/day-${day + 1}`;
+        }, 800);
+      }
+    });
+  </script>
+
+  <canvas id="confetti-canvas" class="pointer-events-none fixed inset-0 z-50"></canvas>
+</ReadingLayout>

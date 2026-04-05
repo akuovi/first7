@@ -1,0 +1,14 @@
+---
+interface Props {
+  number: number;
+  text: string;
+}
+
+const { number, text } = Astro.props;
+const id = `verse-${number}`;
+---
+
+<p id={id} class="bible-verse">
+  <span class="verse-number">{number}</span>
+  {text}
+</p>

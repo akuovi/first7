@@ -1,0 +1,44 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+type BibleEntry = CollectionEntry<'bible'>;
+
+interface Props {
+  title: string;
+  booksList: string[];
+  books: Record<string, BibleEntry[]>;
+}
+
+const { title, booksList, books } = Astro.props;
+---
+
+<div class="space-y-6">
+  <h2 class="text-2xl font-semibold">{title}</h2>
+
+  {booksList
+    .filter((book) => books[book])
+    .map((book) => {
+      const chapters = books[book];
+
+      const sorted = [...chapters].sort(
+        (a, b) => a.data.chapter - b.data.chapter
+      );
+
+      return (
+        <div class="space-y-3">
+          <h3 class="text-lg font-medium">{book}</h3>
+
+          <div class="flex flex-wrap gap-2">
+            {sorted.map((entry) => (
+              <a
+                href={`/bible/${entry.id}`}
+                class="px-3 py-1 rounded-lg border border-[var(--color-border)] text-sm transition hover:bg-[var(--color-primary)]/10 hover:scale-105"
+              >
+                {entry.data.chapter}
+              </a>
+            ))}
+          </div>
+        </div>
+      );
+    })}
+</div>

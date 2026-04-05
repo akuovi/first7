@@ -1,0 +1,129 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('start');
+  const plans = [...new Set(entries.map((entry) => entry.data.plan))];
+
+  return plans.map((plan) => ({
+    params: { plan },
+    props: { plan }
+  }));
+}
+
+const { plan } = Astro.props as { plan: string };
+
+const entries = await getCollection('start');
+const days = entries
+  .filter((entry) => entry.data.plan === plan)
+  .sort((a, b) => a.data.day - b.data.day);
+
+const knownPlans = [...new Set(entries.map((entry) => entry.data.plan))].sort();
+---
+
+<BaseLayout>
+  <div class="space-y-10">
+    <div>
+      <h1 class="text-3xl font-semibold capitalize">{plan.replace(/-/g, ' ')}</h1>
+    </div>
+
+    <div id="continue-box" class="hidden rounded-xl border bg-[var(--color-primary)]/10 p-5">
+      <p class="mb-2 text-sm text-[var(--color-muted)]">Continue your journey</p>
+      <a id="continue-link" class="font-medium">Continue -></a>
+    </div>
+
+    <div>
+      <div class="mb-2 flex justify-between text-sm text-[var(--color-muted)]">
+        <span>Progress</span>
+        <span id="progress-text">0%</span>
+      </div>
+
+      <div class="h-2 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
+        <div
+          id="progress-bar"
+          class="h-full w-0 bg-[var(--color-primary)] transition-all duration-500"
+        ></div>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      {days.map((entry) => (
+        <a
+          href={`/plans/${plan}/day-${entry.data.day}`}
+          data-day={entry.data.day}
+          class="block rounded-lg border border-[var(--color-border)] p-4 transition hover:bg-[var(--color-primary)]/5"
+        >
+          <p class="font-medium">Day {entry.data.day}</p>
+          <p class="text-sm text-[var(--color-muted)]">{entry.data.title}</p>
+        </a>
+      ))}
+    </div>
+  </div>
+
+  <script is:inline define:vars={{ knownPlans }}>
+    const getSavedDays = (storageKey) => {
+      try {
+        const rawValue = localStorage.getItem(storageKey);
+        const parsed = rawValue ? JSON.parse(rawValue) : [];
+        return Array.isArray(parsed) ? parsed.filter((value) => Number.isInteger(value)) : [];
+      } catch {
+        return [];
+      }
+    };
+
+    const currentPlan = window.location.pathname.split('/')[2] ?? '';
+    const totalDays = document.querySelectorAll('[data-day]').length;
+    const savedDays = getSavedDays(`first7-${currentPlan}`);
+    const percent = totalDays === 0 ? 0 : Math.round((savedDays.length / totalDays) * 100);
+
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+
+    if (progressBar instanceof HTMLElement) {
+      progressBar.style.width = `${percent}%`;
+    }
+
+    if (progressText) {
+      progressText.textContent = `${percent}%`;
+    }
+
+    savedDays.forEach((savedDay) => {
+      const dayLink = document.querySelector(`[data-day="${savedDay}"]`);
+
+      if (dayLink instanceof HTMLElement) {
+        dayLink.classList.add('bg-[var(--color-primary)]/10');
+      }
+    });
+
+    let latestPlan = null;
+    let latestDay = 0;
+
+    knownPlans.forEach((planName) => {
+      const completedDays = getSavedDays(`first7-${planName}`);
+
+      if (completedDays.length === 0) {
+        return;
+      }
+
+      const maxDay = Math.max(...completedDays);
+
+      if (maxDay > latestDay) {
+        latestDay = maxDay;
+        latestPlan = planName;
+      }
+    });
+
+    const continueBox = document.getElementById('continue-box');
+    const continueLink = document.getElementById('continue-link');
+
+    if (
+      latestPlan &&
+      continueBox instanceof HTMLElement &&
+      continueLink instanceof HTMLAnchorElement
+    ) {
+      continueBox.classList.remove('hidden');
+      continueLink.href = `/plans/${latestPlan}/day-${latestDay + 1}`;
+    }
+  </script>
+</BaseLayout>

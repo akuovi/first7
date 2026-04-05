@@ -1,0 +1,18 @@
+---
+const { title, description, link } = Astro.props;
+---
+
+<div class="p-5 rounded-xl border bg-[var(--color-primary)]/10">
+  <h3 class="font-semibold text-lg">{title}</h3>
+
+  <p class="text-sm text-[var(--color-muted)] mt-1">
+    {description}
+  </p>
+
+  <a 
+    href={link}
+    class="inline-block mt-3 px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg"
+  >
+    Continue
+  </a>
+</div>

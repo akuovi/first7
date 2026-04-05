@@ -1,17 +1,114 @@
 ---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
 
+const devotionals = (await getCollection("devotionals")).slice(0, 3);
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout title="First7 - Build Your Daily Faith">
+
+  <!-- HERO -->
+  <section class="text-center py-16 space-y-6">
+
+    <h1 class="text-4xl md:text-5xl font-semibold leading-tight">
+      Build Your Daily Habit of Faith
+    </h1>
+
+    <p class="text-[var(--color-muted)] max-w-xl mx-auto">
+      Read Scripture, reflect deeply, and grow spiritually — one day at a time.
+    </p>
+
+    <div class="flex justify-center gap-4 mt-6">
+
+      <a
+        href="/plans"
+        class="px-6 py-3 rounded-lg bg-[var(--color-primary)] text-white font-medium hover:opacity-90 transition"
+      >
+        Start a Plan
+      </a>
+
+      <a
+        href="/bible"
+        class="px-6 py-3 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-primary)]/10 transition"
+      >
+        Read Bible
+      </a>
+
+    </div>
+
+  </section>
+
+  <!-- PLANS SECTION -->
+  <section class="mt-16 space-y-6">
+
+    <h2 class="text-2xl font-semibold">Start a Plan</h2>
+
+    <div class="grid md:grid-cols-3 gap-6">
+
+      <a href="/plans" class="p-5 rounded-xl border border-[var(--color-border)] hover:bg-[var(--color-primary)]/5 transition">
+        <h3 class="font-medium">7 Day Reset</h3>
+        <p class="text-sm text-[var(--color-muted)] mt-2">
+          Build a daily habit with a simple 7-day journey.
+        </p>
+      </a>
+
+      <a href="/plans" class="p-5 rounded-xl border border-[var(--color-border)] hover:bg-[var(--color-primary)]/5 transition">
+        <h3 class="font-medium">Overcome Anxiety</h3>
+        <p class="text-sm text-[var(--color-muted)] mt-2">
+          Find peace through Scripture and reflection.
+        </p>
+      </a>
+
+      <a href="/plans" class="p-5 rounded-xl border border-[var(--color-border)] hover:bg-[var(--color-primary)]/5 transition">
+        <h3 class="font-medium">Purpose & Direction</h3>
+        <p class="text-sm text-[var(--color-muted)] mt-2">
+          Discover clarity for your life journey.
+        </p>
+      </a>
+
+    </div>
+
+  </section>
+
+  <!-- BIBLE SECTION -->
+  <section class="mt-16 text-center space-y-4">
+
+    <h2 class="text-2xl font-semibold">Read the Bible</h2>
+
+    <p class="text-[var(--color-muted)]">
+      Explore Scripture with a clean, distraction-free reading experience.
+    </p>
+
+    <a
+      href="/bible"
+      class="inline-block mt-4 px-6 py-3 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-primary)]/10 transition"
+    >
+      Open Bible
+    </a>
+
+  </section>
+
+  <!-- DEVOTIONALS -->
+  <section class="mt-16 space-y-6">
+
+    <h2 class="text-2xl font-semibold">Latest Devotionals</h2>
+
+    <div class="grid md:grid-cols-3 gap-6">
+
+      {devotionals.map((post) => (
+        <a
+          href={`/devotionals/${post.id}`}
+          class="p-5 rounded-xl border border-[var(--color-border)] hover:bg-[var(--color-primary)]/5 transition"
+        >
+          <h3 class="font-medium">{post.data.title}</h3>
+          <p class="text-sm text-[var(--color-muted)] mt-2">
+            {post.data.excerpt}
+          </p>
+        </a>
+      ))}
+
+    </div>
+
+  </section>
+
+</BaseLayout>

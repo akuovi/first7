@@ -1,0 +1,30 @@
+---
+const { id } = Astro.props;
+---
+
+<div class="rounded-2xl border border-[var(--color-border)] p-6">
+
+  <p class="text-sm font-medium text-[var(--color-muted)]">
+    Reflection
+  </p>
+
+  <p class="mt-3 text-lg leading-relaxed">
+    What is one thing you can take from this today?
+  </p>
+
+  <div class="mt-5 border-t border-dashed border-[var(--color-border)]"></div>
+
+  <!-- TEXTAREA -->
+  <textarea 
+    id={`reflection-${id}`}
+    class="mt-4 w-full rounded-lg border border-[var(--color-border)] p-3 bg-transparent focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+    rows="4"
+    placeholder="Write your thoughts..."
+  ></textarea>
+
+  <!-- SAVE STATUS -->
+  <p id={`save-status-${id}`} class="text-xs text-[var(--color-muted)] mt-2">
+    Not saved
+  </p>
+
+</div>

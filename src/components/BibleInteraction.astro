@@ -1,0 +1,105 @@
+---
+const { book, chapter } = Astro.props;
+---
+
+<div class="mb-4 flex items-center justify-between">
+  <button id="bookmark-btn" class="rounded border px-3 py-1 text-sm" type="button">
+    Bookmark
+  </button>
+
+  <button id="share-btn" class="rounded border px-3 py-1 text-sm" type="button">
+    Share
+  </button>
+</div>
+
+<script is:inline define:vars={{ book, chapter }}>
+  const verseEls = document.querySelectorAll('.bible-verse');
+  const bookmarkBtn = document.getElementById('bookmark-btn');
+  const shareBtn = document.getElementById('share-btn');
+
+  const highlightKey = `highlight-${book}-${chapter}`;
+  const bookmarkKey = 'bible-bookmarks';
+
+  let selectedVerse = null;
+
+  verseEls.forEach((el, index) => {
+    const verseNumber = index + 1;
+
+    el.setAttribute('data-verse', verseNumber.toString());
+    el.setAttribute('id', `v${verseNumber}`);
+
+    if (!el.querySelector('.verse-number')) {
+      const span = document.createElement('span');
+      span.className = 'verse-number';
+      span.textContent = `${verseNumber} `;
+      el.prepend(span);
+    }
+  });
+
+  const savedHighlight = localStorage.getItem(highlightKey);
+  if (savedHighlight) {
+    const el = document.querySelector(`#v${savedHighlight}`);
+    el?.classList.add('bg-yellow-200/40');
+    selectedVerse = savedHighlight;
+  }
+
+  verseEls.forEach((el) => {
+    el.addEventListener('click', () => {
+      verseEls.forEach((verseEl) => verseEl.classList.remove('bg-yellow-200/40'));
+
+      el.classList.add('bg-yellow-200/40');
+      const verse = el.getAttribute('data-verse');
+      selectedVerse = verse;
+
+      if (verse) {
+        localStorage.setItem(highlightKey, verse);
+      }
+    });
+  });
+
+  bookmarkBtn?.addEventListener('click', () => {
+    if (!selectedVerse) {
+      return;
+    }
+
+    let bookmarks = [];
+    try {
+      bookmarks = JSON.parse(localStorage.getItem(bookmarkKey) ?? '[]');
+    } catch {}
+
+    const exists = bookmarks.find(
+      (entry) => entry.book === book && entry.chapter === chapter && entry.verse === selectedVerse
+    );
+
+    if (!exists) {
+      bookmarks.push({ book, chapter, verse: selectedVerse });
+      localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
+
+      if (bookmarkBtn instanceof HTMLButtonElement) {
+        bookmarkBtn.textContent = 'Saved';
+      }
+    }
+  });
+
+  shareBtn?.addEventListener('click', async () => {
+    if (!selectedVerse) {
+      return;
+    }
+
+    const url = `${window.location.origin}/bible/${book}/${chapter}#v${selectedVerse}`;
+
+    try {
+      await navigator.clipboard.writeText(url);
+
+      if (shareBtn instanceof HTMLButtonElement) {
+        shareBtn.textContent = 'Copied';
+      }
+    } catch {}
+  });
+
+  if (window.location.hash) {
+    const target = document.querySelector(window.location.hash);
+    target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target?.classList.add('bg-yellow-200/40');
+  }
+</script>

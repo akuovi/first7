@@ -1,0 +1,92 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const entries = await getCollection('start');
+const plans: Record<string, CollectionEntry<'start'>[]> = Object.create(null);
+
+for (const entry of entries) {
+  const plan = entry.data.plan;
+  plans[plan] ??= [];
+  plans[plan].push(entry);
+}
+
+const knownPlans = Object.keys(plans).sort();
+---
+
+<BaseLayout>
+  <div class="space-y-10">
+    <div>
+      <h1 class="text-4xl font-semibold">Start Your Journey</h1>
+      <p class="mt-2 text-[var(--color-muted)]">Choose a 7-day plan</p>
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-2">
+      {Object.entries(plans)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([plan, days]) => (
+          <a
+            href={`/plans/${plan}`}
+            class="rounded-xl border border-[var(--color-border)] p-6 transition hover:bg-[var(--color-primary)]/5"
+          >
+            <h2 class="text-xl font-medium capitalize">{plan.replace(/-/g, ' ')}</h2>
+            <p class="mt-2 text-sm text-[var(--color-muted)]">{days.length} days</p>
+          </a>
+        ))}
+    </div>
+
+    <div id="reminder-box" class="hidden rounded-xl border bg-[var(--color-primary)]/10 p-5">
+      <p class="text-sm text-[var(--color-muted)]">Continue your journey</p>
+      <p class="mt-2">Don't break your streak. Keep going.</p>
+      <a
+        id="continue-btn"
+        class="mt-3 inline-block rounded-lg bg-[var(--color-primary)] px-4 py-2 text-white"
+      >
+        Continue ->
+      </a>
+    </div>
+  </div>
+
+  <script is:inline define:vars={{ knownPlans }}>
+    const getSavedDays = (storageKey) => {
+      try {
+        const rawValue = localStorage.getItem(storageKey);
+        const parsed = rawValue ? JSON.parse(rawValue) : [];
+        return Array.isArray(parsed) ? parsed.filter((value) => Number.isInteger(value)) : [];
+      } catch {
+        return [];
+      }
+    };
+
+    let latestPlan = null;
+    let latestDay = 0;
+
+    knownPlans.forEach((planName) => {
+      const completedDays = getSavedDays(`first7-${planName}`);
+
+      if (completedDays.length === 0) {
+        return;
+      }
+
+      const maxDay = Math.max(...completedDays);
+
+      if (maxDay > latestDay) {
+        latestDay = maxDay;
+        latestPlan = planName;
+      }
+    });
+
+    const reminderBox = document.getElementById('reminder-box');
+    const continueButton = document.getElementById('continue-btn');
+
+    if (
+      latestPlan &&
+      reminderBox instanceof HTMLElement &&
+      continueButton instanceof HTMLAnchorElement
+    ) {
+      reminderBox.classList.remove('hidden');
+      continueButton.href = `/plans/${latestPlan}/day-${latestDay + 1}`;
+    }
+  </script>
+</BaseLayout>

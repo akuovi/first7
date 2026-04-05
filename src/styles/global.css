@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+/* Theme */
+@theme {
+  --color-bg: #FAFAF7;
+  --color-text: #1C1C1C;
+  --color-muted: #6B7280;
+  --color-border: #E5E7EB;
+  --color-primary: #22C55E;
+}
+
+/* Dark mode */
+.dark {
+  --color-bg: #0F172A;
+  --color-text: #E5E7EB;
+  --color-muted: #94A3B8;
+  --color-border: #1E293B;
+  --color-primary: #22C55E;
+}
+
+/* Bible container */
+.bible-container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: 0.2px;
+}
+
+/* Verse */
+.bible-verse {
+  font-size: 1.1rem;
+  line-height: 1.9;
+  margin-bottom: 0.6rem;
+  color: var(--color-text);
+  scroll-margin-top: 100px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.bible-verse:hover {
+  background: rgba(34, 197, 94, 0.05);
+  border-radius: 6px;
+}
+
+/* Verse number */
+.verse-number {
+  font-size: 0.75rem;
+  vertical-align: super;
+  margin-right: 6px;
+  color: var(--color-muted);
+}
+
+/* Highlight when linked */
+.bible-verse:target {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 4px 6px;
+}
+
+/* Verse links */
+.bible-link {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: opacity 0.2s ease;
+}
+
+.bible-link:hover {
+  opacity: 0.7;
+}
+
+/* Hover effect */
+.bible-verse:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
