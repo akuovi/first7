@@ -1,0 +1,31 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import ReadingLayout from '../../layouts/ReadingLayout.astro';
+
+type GuideEntry = CollectionEntry<'guides'>;
+
+export async function getStaticPaths() {
+  const guides = await getCollection('guides');
+  console.log('GUIDES:', guides.map((g) => g.id));
+
+  return guides.map((guide) => ({
+    params: { slug: guide.id },
+    props: { guide }
+  }));
+}
+
+const { guide } = Astro.props as { guide: GuideEntry };
+const { Content } = await render(guide);
+---
+
+<ReadingLayout title={guide.data.title}>
+  <div class="mx-auto max-w-3xl px-5">
+    <h1 class="text-4xl font-semibold mb-6">
+      {guide.data.title}
+    </h1>
+
+    <article class="space-y-6 text-lg leading-relaxed">
+      <Content />
+    </article>
+  </div>
+</ReadingLayout>

@@ -18,11 +18,12 @@ const devotionals = (await getCollection("devotionals")).slice(0, 3);
       Read Scripture, reflect deeply, and grow spiritually — one day at a time.
     </p>
 
-    <div class="flex justify-center gap-4 mt-6">
+    <div class="flex justify-center gap-4 mt-6 flex-wrap">
 
+      <!-- ✅ FIXED BUTTON (contrast) -->
       <a
         href="/plans"
-        class="px-6 py-3 rounded-lg bg-[var(--color-primary)] text-white font-medium hover:opacity-90 transition"
+        class="px-6 py-3 rounded-lg bg-[var(--color-primary)] text-[var(--color-bg)] font-medium hover:opacity-90 transition"
       >
         Start a Plan
       </a>
@@ -91,7 +92,14 @@ const devotionals = (await getCollection("devotionals")).slice(0, 3);
   <!-- DEVOTIONALS -->
   <section class="mt-16 space-y-6">
 
-    <h2 class="text-2xl font-semibold">Latest Devotionals</h2>
+    <div class="flex items-center justify-between">
+      <h2 class="text-2xl font-semibold">Latest Devotionals</h2>
+
+      <!-- ✅ small UX improvement -->
+      <a href="/devotionals" class="text-sm text-[var(--color-text)] hover:text-[var(--color-primary)]">
+        View all →
+      </a>
+    </div>
 
     <div class="grid md:grid-cols-3 gap-6">
 
@@ -101,7 +109,8 @@ const devotionals = (await getCollection("devotionals")).slice(0, 3);
           class="p-5 rounded-xl border border-[var(--color-border)] hover:bg-[var(--color-primary)]/5 transition"
         >
           <h3 class="font-medium">{post.data.title}</h3>
-          <p class="text-sm text-[var(--color-muted)] mt-2">
+
+          <p class="text-sm text-[var(--color-muted)] mt-2 line-clamp-2">
             {post.data.excerpt}
           </p>
         </a>

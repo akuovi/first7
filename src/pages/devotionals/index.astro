@@ -39,7 +39,6 @@ const featured = posts[posts.length - 1];
         .map((post) => (
           <a
             href={`/devotionals/${post.id}`}
-            data-day={post.data.day}
             class="group rounded-2xl border border-[var(--color-border)] p-5 transition hover:bg-[var(--color-primary)]/5 hover:shadow-sm"
           >
             <div class="flex items-center justify-between">
@@ -59,23 +58,4 @@ const featured = posts[posts.length - 1];
         ))}
     </div>
   </div>
-
-  <script is:inline>
-    const key = 'first7-devotionals';
-
-    const getSaved = () => {
-      try {
-        return JSON.parse(localStorage.getItem(key) ?? '[]');
-      } catch {
-        return [];
-      }
-    };
-
-    const saved = getSaved();
-
-    saved.forEach((day) => {
-      const el = document.querySelector(`[data-day="${day}"]`);
-      el?.classList.add('bg-[var(--color-primary)]/10');
-    });
-  </script>
 </BaseLayout>

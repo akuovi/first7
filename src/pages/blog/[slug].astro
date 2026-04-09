@@ -18,18 +18,54 @@ const { Content } = await render(post);
 ---
 
 <ReadingLayout title={post.data.title}>
-  <div class="mb-6 text-sm text-[var(--color-muted)]">
-    <p>{post.data.date.toLocaleDateString()}</p>
+
+  <div class="mx-auto max-w-3xl px-5">
+
+    <!-- TITLE -->
+    <header class="mb-12">
+      <h1 class="text-3xl md:text-5xl font-semibold leading-tight tracking-tight">
+        {post.data.title}
+      </h1>
+
+      <!-- META -->
+      <div class="mt-5 flex flex-wrap items-center gap-3 text-sm text-[var(--color-muted)]">
+        <span>{post.data.date.toLocaleDateString()}</span>
+
+        {post.data.tags.map(tag => (
+          <span class="px-2 py-1 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] text-xs">
+            {tag}
+          </span>
+        ))}
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <article class="max-w-none">
+
+      <Content />
+
+    </article>
+
+    <!-- SOFT DIVIDER -->
+    <div class="my-16 h-px bg-gradient-to-r from-transparent via-[var(--color-border)] to-transparent"></div>
+
+    <!-- CTA -->
+    <section class="text-center space-y-6">
+      <p class="text-xl font-medium">
+        Continue your journey
+      </p>
+
+      <div class="flex flex-wrap justify-center gap-4">
+        <a href="/blog" class="px-5 py-2.5 rounded-lg border border-[var(--color-border)] hover:border-[var(--color-primary)] transition">
+          ← Back to Blog
+        </a>
+
+        <a href="/start" class="px-5 py-2.5 rounded-lg bg-[var(--color-primary)] text-white hover:opacity-90 transition">
+          Start 7-Day Journey
+        </a>
+      </div>
+    </section>
+
   </div>
 
-  <div class="space-y-6 text-lg leading-relaxed">
-    <Content />
-  </div>
-
-  <div class="my-10 border-t border-[var(--color-border)]"></div>
-
-  <div class="flex justify-between text-sm text-[var(--color-muted)]">
-    <a href="/blog">{'<-'} Back to Blog</a>
-    <span>{post.data.tags.join(', ')}</span>
-  </div>
 </ReadingLayout>

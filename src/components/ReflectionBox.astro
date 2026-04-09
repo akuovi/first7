@@ -1,11 +1,12 @@
 ---
-const { id } = Astro.props;
+const { plan, day } = Astro.props;
+const id = `${plan}-${day}`;
 ---
 
 <div class="rounded-2xl border border-[var(--color-border)] p-6">
 
   <p class="text-sm font-medium text-[var(--color-muted)]">
-    Reflection
+    Reflection — Day {day}
   </p>
 
   <p class="mt-3 text-lg leading-relaxed">
@@ -18,13 +19,46 @@ const { id } = Astro.props;
   <textarea 
     id={`reflection-${id}`}
     class="mt-4 w-full rounded-lg border border-[var(--color-border)] p-3 bg-transparent focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-    rows="4"
+    rows="5"
     placeholder="Write your thoughts..."
   ></textarea>
 
-  <!-- SAVE STATUS -->
-  <p id={`save-status-${id}`} class="text-xs text-[var(--color-muted)] mt-2">
-    Not saved
-  </p>
+  <!-- STATUS -->
+  <div class="flex items-center justify-between mt-2 text-xs text-[var(--color-muted)]">
+    <span id={`save-status-${id}`}>Not saved</span>
+    <button id={`clear-${id}`} class="hover:text-red-500">Clear</button>
+  </div>
 
 </div>
+
+<script>
+  const id = "{plan}-{day}";
+  const textarea = document.getElementById(`reflection-${id}`) as HTMLTextAreaElement | null;
+  const status = document.getElementById(`save-status-${id}`);
+  const clearBtn = document.getElementById(`clear-${id}`);
+  const key = `journal-${id}`;
+
+  if (textarea && status) {
+
+    // Load
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      textarea.value = saved;
+      status.textContent = "Saved ✓";
+    }
+
+    // Auto-save
+    textarea.addEventListener("input", () => {
+      localStorage.setItem(key, textarea.value);
+      status.textContent = "Saved ✓";
+    });
+
+    // Clear
+    clearBtn?.addEventListener("click", () => {
+      localStorage.removeItem(key);
+      textarea.value = "";
+      status.textContent = "Cleared";
+    });
+
+  }
+</script>

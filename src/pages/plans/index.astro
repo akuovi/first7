@@ -16,37 +16,90 @@ const knownPlans = Object.keys(plans).sort();
 ---
 
 <BaseLayout>
-  <div class="space-y-10">
-    <div>
-      <h1 class="text-4xl font-semibold">Start Your Journey</h1>
-      <p class="mt-2 text-[var(--color-muted)]">Choose a 7-day plan</p>
+
+  <section class="max-w-5xl mx-auto py-16 px-4 space-y-12">
+
+    <!-- HEADER -->
+    <div class="text-center max-w-2xl mx-auto">
+      <h1 class="text-4xl md:text-5xl font-semibold">
+        Start Your Journey
+      </h1>
+      <p class="mt-3 text-[var(--color-muted)]">
+        Choose a 7-day plan to grow your faith, step by step.
+      </p>
     </div>
 
+    <!-- HOW TO USE CTA -->
+    <div class="flex justify-center">
+      <a
+        href="/guides/how-to-use"
+        class="px-5 py-2.5 rounded-lg border border-[var(--color-border)] hover:border-[var(--color-primary)] transition"
+      >
+        How to use this →
+      </a>
+    </div>
+
+    <!-- PLANS GRID -->
     <div class="grid gap-6 md:grid-cols-2">
+
       {Object.entries(plans)
         .sort(([left], [right]) => left.localeCompare(right))
         .map(([plan, days]) => (
+
           <a
             href={`/plans/${plan}`}
-            class="rounded-xl border border-[var(--color-border)] p-6 transition hover:bg-[var(--color-primary)]/5"
+            class="group p-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] hover:shadow-md transition"
           >
-            <h2 class="text-xl font-medium capitalize">{plan.replace(/-/g, ' ')}</h2>
-            <p class="mt-2 text-sm text-[var(--color-muted)]">{days.length} days</p>
+            <div class="flex items-center justify-between">
+
+              <h2 class="text-xl font-semibold capitalize">
+                {plan.replace(/-/g, ' ')}
+              </h2>
+
+              <span class="text-sm text-[var(--color-muted)]">
+                {days.length} days
+              </span>
+
+            </div>
+
+            <p class="mt-3 text-sm text-[var(--color-muted)]">
+              A guided journey to help you grow daily.
+            </p>
+
+            <div class="mt-5 text-[var(--color-primary)] text-sm font-medium flex items-center gap-1">
+              Start →
+            </div>
+
           </a>
+
         ))}
+
     </div>
 
-    <div id="reminder-box" class="hidden rounded-xl border bg-[var(--color-primary)]/10 p-5">
-      <p class="text-sm text-[var(--color-muted)]">Continue your journey</p>
-      <p class="mt-2">Don't break your streak. Keep going.</p>
+    <!-- CONTINUE BOX -->
+    <div id="reminder-box" class="hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-primary)]/5 p-6 text-center">
+
+      <p class="text-sm text-[var(--color-muted)]">
+        Continue your journey
+      </p>
+
+      <p class="mt-2 text-lg font-medium">
+        Don’t break your streak
+      </p>
+
       <a
         id="continue-btn"
-        class="mt-3 inline-block rounded-lg bg-[var(--color-primary)] px-4 py-2 text-white"
+        class="mt-4 inline-block px-5 py-2.5 rounded-lg text-white font-medium"
+        style="background-color: var(--color-primary);"
       >
-        Continue ->
+        Continue →
       </a>
+
     </div>
-  </div>
+
+  </section>
+
+  <!-- KEEP YOUR SCRIPT (no change needed) -->
 
   <script is:inline define:vars={{ knownPlans }}>
     const getSavedDays = (storageKey) => {

@@ -2,6 +2,9 @@ import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'zod';
 
+/* =========================
+   📖 DEVOTIONALS
+========================= */
 const devotionals = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/devotionals' }),
   schema: z.object({
@@ -14,6 +17,9 @@ const devotionals = defineCollection({
   })
 });
 
+/* =========================
+   📰 BLOG
+========================= */
 const blog = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/blog' }),
   schema: z.object({
@@ -25,6 +31,9 @@ const blog = defineCollection({
   })
 });
 
+/* =========================
+   📜 BIBLE
+========================= */
 const bible = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/bible' }),
   schema: z.object({
@@ -33,6 +42,9 @@ const bible = defineCollection({
   })
 });
 
+/* =========================
+   📥 DOWNLOADS
+========================= */
 const downloads = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/downloads' }),
   schema: z.object({
@@ -42,6 +54,9 @@ const downloads = defineCollection({
   })
 });
 
+/* =========================
+   🚀 PLANS (START)
+========================= */
 const start = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/plans' }),
   schema: z.object({
@@ -53,10 +68,32 @@ const start = defineCollection({
   })
 });
 
+/* =========================
+   🧭 GUIDES (FIXED)
+========================= */
+const guides = defineCollection({
+  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/guides' }),
+  schema: z.object({
+    title: z.string(),
+
+    // 🏷️ Badge system
+    featured: z.boolean().optional(),
+    new: z.boolean().optional(),
+    updated: z.boolean().optional(),
+
+    // ✨ Optional
+    description: z.string().optional(),
+  })
+});
+
+/* =========================
+   📦 EXPORT
+========================= */
 export const collections = {
   devotionals,
   blog,
   bible,
   downloads,
-  start
+  start,
+  guides
 };
