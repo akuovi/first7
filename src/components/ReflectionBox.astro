@@ -3,44 +3,59 @@ const { plan, day } = Astro.props;
 const id = `${plan}-${day}`;
 ---
 
-<div class="rounded-2xl border border-[var(--color-border)] p-6">
+<div class="rounded-2xl border border-[var(--color-border)] bg-[var(--color-primary)]/5 p-6 space-y-4">
 
-  <p class="text-sm font-medium text-[var(--color-muted)]">
-    Reflection — Day {day}
-  </p>
+  <!-- HEADER -->
+  <div>
+    <p class="text-sm font-medium text-[var(--color-muted)]">
+      Reflection — Day {day}
+    </p>
 
-  <p class="mt-3 text-lg leading-relaxed">
-    What is one thing you can take from this today?
-  </p>
+    <p class="mt-2 text-lg leading-relaxed">
+      What is one thing God is showing you today?
+    </p>
 
-  <div class="mt-5 border-t border-dashed border-[var(--color-border)]"></div>
+    <p class="mt-1 text-xs text-[var(--color-muted)]">
+      Take your time. You can write honestly.
+    </p>
+  </div>
 
   <!-- TEXTAREA -->
   <textarea 
     id={`reflection-${id}`}
-    class="mt-4 w-full rounded-lg border border-[var(--color-border)] p-3 bg-transparent focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+    class="w-full rounded-xl border border-[var(--color-border)] p-4 bg-white/40 dark:bg-transparent focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30 transition"
     rows="5"
     placeholder="Write your thoughts..."
   ></textarea>
 
-  <!-- STATUS -->
-  <div class="flex items-center justify-between mt-2 text-xs text-[var(--color-muted)]">
-    <span id={`save-status-${id}`}>Not saved</span>
-    <button id={`clear-${id}`} class="hover:text-red-500">Clear</button>
+  <!-- FOOTER -->
+  <div class="flex items-center justify-between text-xs text-[var(--color-muted)]">
+
+    <span id={`save-status-${id}`}>
+      Not saved
+    </span>
+
+    <button 
+      id={`clear-${id}`} 
+      class="hover:text-red-500 transition"
+      type="button"
+    >
+      Clear
+    </button>
+
   </div>
 
 </div>
 
-<script>
-  const id = "{plan}-{day}";
-  const textarea = document.getElementById(`reflection-${id}`) as HTMLTextAreaElement | null;
+<script is:inline define:vars={{ id }}>
+  const textarea = document.getElementById(`reflection-${id}`);
   const status = document.getElementById(`save-status-${id}`);
   const clearBtn = document.getElementById(`clear-${id}`);
   const key = `journal-${id}`;
 
   if (textarea && status) {
 
-    // Load
+    // Load saved
     const saved = localStorage.getItem(key);
     if (saved) {
       textarea.value = saved;
@@ -54,11 +69,13 @@ const id = `${plan}-${day}`;
     });
 
     // Clear
-    clearBtn?.addEventListener("click", () => {
-      localStorage.removeItem(key);
-      textarea.value = "";
-      status.textContent = "Cleared";
-    });
+    if (clearBtn) {
+      clearBtn.addEventListener("click", () => {
+        localStorage.removeItem(key);
+        textarea.value = "";
+        status.textContent = "Cleared";
+      });
+    }
 
   }
 </script>

@@ -29,70 +29,135 @@ const previousEntry = currentIndex > 0 ? planEntries[currentIndex - 1] : undefin
 const nextEntry = currentIndex >= 0 ? planEntries[currentIndex + 1] : undefined;
 
 const { Content } = await render(entry);
+
 const plan = entry.data.plan;
 const day = entry.data.day;
 const totalDays = planEntries.length;
 ---
 
 <ReadingLayout title={entry.data.title}>
-  <div class="mb-6 rounded-xl bg-[var(--color-primary)]/10 p-4">
-    <p class="text-sm uppercase tracking-wide text-[var(--color-muted)]">
-      Key Verse
-    </p>
 
-    <p class="mt-1 text-lg font-medium">
-      <VerseLink verse={entry.data.verse} />
-    </p>
-  </div>
+  <div class="mx-auto max-w-2xl px-5 py-10 space-y-12">
 
-  <div class="space-y-6 text-lg leading-relaxed">
-    <Content />
-  </div>
+    <!-- 🧭 PROGRESS -->
+    <div class="space-y-4">
 
-  <div
-    id="celebration-box"
-    class="mt-10 hidden rounded-xl border bg-[var(--color-primary)]/10 p-6 text-center"
-  >
-    <p class="text-sm text-[var(--color-muted)]">Congratulations</p>
-    <h2 class="mt-2 text-2xl font-semibold">You completed this plan!</h2>
-    <p class="mt-2 text-[var(--color-muted)]">
-      Keep going, your journey is just beginning.
-    </p>
-  </div>
+      <div class="flex items-center justify-between text-sm text-[var(--color-muted)]">
+        <span>Day {day} of {totalDays}</span>
+        <span>{Math.round((day / totalDays) * 100)}%</span>
+      </div>
 
-  <div class="mt-8 rounded-xl border p-4">
-    <p class="text-sm text-[var(--color-muted)]">Streak</p>
-    <p id="streak-count" class="text-2xl font-semibold">0 days</p>
-  </div>
+      <div class="flex gap-2">
+        {Array.from({ length: totalDays }).map((_, i) => (
+          <div
+            class={`h-2 flex-1 rounded-full transition ${
+              i < day
+                ? 'bg-[var(--color-primary)]'
+                : 'bg-[var(--color-border)]'
+            }`}
+          />
+        ))}
+      </div>
 
-  <div class="mt-10 flex items-center justify-between">
-    <button
-      id="complete-btn"
-      class="rounded-lg bg-[var(--color-primary)] px-5 py-2 text-white"
-      type="button"
+    </div>
+
+    <!-- 📖 TITLE -->
+    <div class="space-y-3">
+      <h1 class="text-3xl md:text-4xl font-semibold leading-tight tracking-tight">
+        {entry.data.title}
+      </h1>
+
+      <p class="text-[var(--color-muted)] leading-relaxed">
+        {entry.data.description}
+      </p>
+    </div>
+
+    <!-- ✨ FOCUS VERSE -->
+    <div class="rounded-2xl border border-[var(--color-border)] bg-[var(--color-primary)]/5 p-6 space-y-3">
+
+      <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">
+        Today’s Focus
+      </p>
+
+      <p class="text-lg font-medium leading-relaxed">
+        <VerseLink verse={entry.data.verse} />
+      </p>
+
+    </div>
+
+    <!-- 📖 READ -->
+    <div class="space-y-6">
+      <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">
+        Read
+      </p>
+
+      <article class="space-y-6 text-lg leading-relaxed">
+        <Content />
+      </article>
+    </div>
+
+    <!-- 🔁 STREAK -->
+    <div class="rounded-xl border bg-[var(--color-primary)]/5 p-5 flex items-center justify-between">
+      <div>
+        <p class="text-sm text-[var(--color-muted)]">Your streak</p>
+        <p id="streak-count" class="text-2xl font-semibold">0 days</p>
+      </div>
+
+      <div class="text-3xl">🔥</div>
+    </div>
+
+    <!-- 🎯 ACTION -->
+    <div class="text-center space-y-4">
+
+      <button
+        id="complete-btn"
+        class="w-full rounded-xl bg-[var(--color-primary)] px-6 py-4 text-white font-medium text-lg shadow-sm hover:shadow-md hover:scale-[1.01] transition"
+        type="button"
+      >
+        Complete Day {day} →
+      </button>
+
+      <a
+        id="next-btn"
+        class="hidden text-sm text-[var(--color-muted)] hover:text-[var(--color-primary)] transition"
+      >
+        Skip →
+      </a>
+
+    </div>
+
+    <!-- 🎉 COMPLETION -->
+    <div
+      id="celebration-box"
+      class="hidden rounded-2xl border bg-[var(--color-primary)]/10 p-6 text-center space-y-2"
     >
-      Mark as Complete
-    </button>
+      <p class="text-sm text-[var(--color-muted)]">Completed</p>
+      <h2 class="text-2xl font-semibold">You finished this plan 🎉</h2>
+      <p class="text-[var(--color-muted)]">
+        Keep going — your journey is just beginning.
+      </p>
+    </div>
 
-    <a id="next-btn" class="hidden rounded-lg border px-4 py-2 text-sm">
-      Next ->
-    </a>
+    <!-- 🔙 NAV -->
+    <div class="flex justify-between text-sm text-[var(--color-muted)]">
+
+      {previousEntry ? (
+        <a href={`/plans/${plan}/day-${previousEntry.data.day}`} class="hover:text-[var(--color-primary)]">
+          ← Day {previousEntry.data.day}
+        </a>
+      ) : <span />}
+
+      {nextEntry ? (
+        <a href={`/plans/${plan}/day-${nextEntry.data.day}`} class="hover:text-[var(--color-primary)]">
+          Day {nextEntry.data.day} →
+        </a>
+      ) : <span />}
+
+    </div>
+
   </div>
 
-  <div class="mt-10 flex justify-between text-sm text-[var(--color-muted)]">
-    {previousEntry ? (
-      <a href={`/plans/${plan}/day-${previousEntry.data.day}`}>{'<-'} Day {previousEntry.data.day}</a>
-    ) : (
-      <span />
-    )}
-
-    {nextEntry ? (
-      <a href={`/plans/${plan}/day-${nextEntry.data.day}`}>Day {nextEntry.data.day} -></a>
-    ) : (
-      <span />
-    )}
-  </div>
-
+  <!-- 🧠 SCRIPT -->
   <script is:inline define:vars={{ plan, day, totalDays }}>
     const getSavedDays = (storageKey) => {
       try {
@@ -112,76 +177,21 @@ const totalDays = planEntries.length;
     const celebrationBox = document.getElementById('celebration-box');
     const streakCount = document.getElementById('streak-count');
 
-    const button =
-      completeButton instanceof HTMLButtonElement ? completeButton : null;
-    const nextLink = nextButton instanceof HTMLAnchorElement ? nextButton : null;
-
     if (streakCount) {
       streakCount.textContent = `${savedDays.length} day${savedDays.length === 1 ? '' : 's'}`;
     }
 
-    const launchConfetti = () => {
-      const canvasElement = document.getElementById('confetti-canvas');
-
-      if (!(canvasElement instanceof HTMLCanvasElement)) {
-        return;
-      }
-
-      const context = canvasElement.getContext('2d');
-
-      if (!context) {
-        return;
-      }
-
-      canvasElement.width = window.innerWidth;
-      canvasElement.height = window.innerHeight;
-
-      const pieces = Array.from({ length: 120 }, () => ({
-        x: Math.random() * canvasElement.width,
-        y: Math.random() * canvasElement.height - canvasElement.height,
-        size: Math.random() * 6 + 4,
-        speed: Math.random() * 3 + 2,
-        color: `hsl(${Math.random() * 360}, 70%, 60%)`
-      }));
-
-      let frameId = 0;
-
-      const draw = () => {
-        context.clearRect(0, 0, canvasElement.width, canvasElement.height);
-
-        pieces.forEach((piece) => {
-          piece.y += piece.speed;
-          context.fillStyle = piece.color;
-          context.fillRect(piece.x, piece.y, piece.size, piece.size);
-
-          if (piece.y > canvasElement.height) {
-            piece.y = -10;
-          }
-        });
-
-        frameId = window.requestAnimationFrame(draw);
-      };
-
-      draw();
-
-      window.setTimeout(() => {
-        window.cancelAnimationFrame(frameId);
-        context.clearRect(0, 0, canvasElement.width, canvasElement.height);
-      }, 3000);
-    };
-
     const showCompletionState = () => {
-      if (button) {
-        button.textContent = 'Completed ';
-        button.disabled = true;
+      if (completeButton) {
+        completeButton.textContent = 'Completed ✓';
+        completeButton.disabled = true;
       }
 
-      if (day < totalDays && nextLink) {
-        nextLink.href = `/plans/${plan}/day-${day + 1}`;
-        nextLink.classList.remove('hidden');
+      if (day < totalDays && nextButton instanceof HTMLAnchorElement) {
+        nextButton.href = `/plans/${plan}/day-${day + 1}`;
+        nextButton.classList.remove('hidden');
       } else {
         celebrationBox?.classList.remove('hidden');
-        launchConfetti();
       }
     };
 
@@ -189,9 +199,9 @@ const totalDays = planEntries.length;
       showCompletionState();
     }
 
-    button?.addEventListener('click', () => {
+    completeButton?.addEventListener('click', () => {
       if (!savedDays.includes(day)) {
-        savedDays = [...savedDays, day].sort((left, right) => left - right);
+        savedDays = [...savedDays, day].sort((a, b) => a - b);
         localStorage.setItem(storageKey, JSON.stringify(savedDays));
       }
 
@@ -202,12 +212,11 @@ const totalDays = planEntries.length;
       showCompletionState();
 
       if (day < totalDays) {
-        window.setTimeout(() => {
+        setTimeout(() => {
           window.location.href = `/plans/${plan}/day-${day + 1}`;
-        }, 800);
+        }, 700);
       }
     });
   </script>
 
-  <canvas id="confetti-canvas" class="pointer-events-none fixed inset-0 z-50"></canvas>
 </ReadingLayout>

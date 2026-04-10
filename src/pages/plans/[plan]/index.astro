@@ -19,22 +19,45 @@ const days = entries
   .filter((entry) => entry.data.plan === plan)
   .sort((a, b) => a.data.day - b.data.day);
 
-const knownPlans = [...new Set(entries.map((entry) => entry.data.plan))].sort();
+const totalDays = days.length;
 ---
 
-<BaseLayout>
-  <div class="space-y-10">
-    <div>
-      <h1 class="text-3xl font-semibold capitalize">{plan.replace(/-/g, ' ')}</h1>
+<BaseLayout title={plan}>
+
+  <div class="mx-auto max-w-2xl px-5 py-10 space-y-10">
+
+    <!-- 🧭 HEADER -->
+    <div class="space-y-3">
+      <h1 class="text-3xl md:text-4xl font-semibold capitalize">
+        {plan.replace(/-/g, ' ')}
+      </h1>
+
+      <p class="text-[var(--color-muted)]">
+        A {totalDays}-day guided journey to grow consistently.
+      </p>
     </div>
 
-    <div id="continue-box" class="hidden rounded-xl border bg-[var(--color-primary)]/10 p-5">
-      <p class="mb-2 text-sm text-[var(--color-muted)]">Continue your journey</p>
-      <a id="continue-link" class="font-medium">Continue -></a>
+    <!-- 🔁 CONTINUE -->
+    <div
+      id="continue-box"
+      class="hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-primary)]/10 p-6"
+    >
+      <p id="continue-text" class="text-sm text-[var(--color-muted)]">
+        Continue your journey
+      </p>
+
+      <a
+        id="continue-link"
+        class="mt-2 inline-block text-lg font-medium text-[var(--color-primary)]"
+      >
+        Resume →
+      </a>
     </div>
 
-    <div>
-      <div class="mb-2 flex justify-between text-sm text-[var(--color-muted)]">
+    <!-- 📊 PROGRESS -->
+    <div class="space-y-3">
+
+      <div class="flex justify-between text-sm text-[var(--color-muted)]">
         <span>Progress</span>
         <span id="progress-text">0%</span>
       </div>
@@ -45,23 +68,47 @@ const knownPlans = [...new Set(entries.map((entry) => entry.data.plan))].sort();
           class="h-full w-0 bg-[var(--color-primary)] transition-all duration-500"
         ></div>
       </div>
+
     </div>
 
-    <div class="space-y-4">
+    <!-- 📅 DAYS -->
+    <div class="space-y-3">
+
       {days.map((entry) => (
         <a
           href={`/plans/${plan}/day-${entry.data.day}`}
           data-day={entry.data.day}
-          class="block rounded-lg border border-[var(--color-border)] p-4 transition hover:bg-[var(--color-primary)]/5"
+          class="group flex items-center justify-between rounded-xl border border-[var(--color-border)] p-4 transition hover:bg-[var(--color-primary)]/5"
         >
-          <p class="font-medium">Day {entry.data.day}</p>
-          <p class="text-sm text-[var(--color-muted)]">{entry.data.title}</p>
+
+          <!-- LEFT -->
+          <div>
+            <p class="font-medium">
+              Day {entry.data.day}
+            </p>
+
+            <p class="text-sm text-[var(--color-muted)]">
+              {entry.data.title}
+            </p>
+          </div>
+
+          <!-- RIGHT -->
+          <div
+            class="text-xs text-[var(--color-muted)] group-hover:text-[var(--color-primary)]"
+            data-status
+          >
+            →
+          </div>
+
         </a>
       ))}
+
     </div>
+
   </div>
 
-  <script is:inline define:vars={{ knownPlans }}>
+  <!-- 🧠 SCRIPT -->
+  <script is:inline define:vars={{ plan, totalDays }}>
     const getSavedDays = (storageKey) => {
       try {
         const rawValue = localStorage.getItem(storageKey);
@@ -72,15 +119,16 @@ const knownPlans = [...new Set(entries.map((entry) => entry.data.plan))].sort();
       }
     };
 
-    const currentPlan = window.location.pathname.split('/')[2] ?? '';
-    const totalDays = document.querySelectorAll('[data-day]').length;
-    const savedDays = getSavedDays(`first7-${currentPlan}`);
+    const storageKey = `first7-${plan}`;
+    const savedDays = getSavedDays(storageKey);
+
+    // 📊 PROGRESS
     const percent = totalDays === 0 ? 0 : Math.round((savedDays.length / totalDays) * 100);
 
     const progressBar = document.getElementById('progress-bar');
     const progressText = document.getElementById('progress-text');
 
-    if (progressBar instanceof HTMLElement) {
+    if (progressBar) {
       progressBar.style.width = `${percent}%`;
     }
 
@@ -88,42 +136,49 @@ const knownPlans = [...new Set(entries.map((entry) => entry.data.plan))].sort();
       progressText.textContent = `${percent}%`;
     }
 
+    // ✅ MARK COMPLETED DAYS
     savedDays.forEach((savedDay) => {
       const dayLink = document.querySelector(`[data-day="${savedDay}"]`);
+      const status = dayLink?.querySelector('[data-status]');
 
-      if (dayLink instanceof HTMLElement) {
+      if (dayLink) {
         dayLink.classList.add('bg-[var(--color-primary)]/10');
       }
-    });
 
-    let latestPlan = null;
-    let latestDay = 0;
-
-    knownPlans.forEach((planName) => {
-      const completedDays = getSavedDays(`first7-${planName}`);
-
-      if (completedDays.length === 0) {
-        return;
-      }
-
-      const maxDay = Math.max(...completedDays);
-
-      if (maxDay > latestDay) {
-        latestDay = maxDay;
-        latestPlan = planName;
+      if (status) {
+        status.textContent = '✓';
       }
     });
 
+    // 🔁 CONTINUE FIXED LOGIC
     const continueBox = document.getElementById('continue-box');
     const continueLink = document.getElementById('continue-link');
+    const continueText = document.getElementById('continue-text');
 
-    if (
-      latestPlan &&
-      continueBox instanceof HTMLElement &&
-      continueLink instanceof HTMLAnchorElement
-    ) {
+    if (continueBox && continueLink && savedDays.length > 0) {
+
+      const lastDay = Math.max(...savedDays);
+
       continueBox.classList.remove('hidden');
-      continueLink.href = `/plans/${latestPlan}/day-${latestDay + 1}`;
+
+      // ✅ COMPLETED PLAN
+      if (lastDay >= totalDays) {
+
+        continueLink.href = `/plans/${plan}`;
+        continueLink.textContent = "View your journey →";
+
+        if (continueText) {
+          continueText.textContent = "You've completed this plan 🎉";
+        }
+
+      } else {
+
+        // ✅ NORMAL RESUME
+        continueLink.href = `/plans/${plan}/day-${lastDay + 1}`;
+        continueLink.textContent = `Resume Day ${lastDay + 1} →`;
+
+      }
     }
   </script>
+
 </BaseLayout>
