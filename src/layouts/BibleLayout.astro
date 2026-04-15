@@ -1,30 +1,32 @@
 ---
 import BaseLayout from "./BaseLayout.astro";
-import { getCollection } from "astro:content";
 
 const { currentBook, currentChapter } = Astro.props as {
   currentBook: string;
   currentChapter: number;
 };
 
-const entries = await getCollection("bible");
+type BibleData = {
+  book: string;
+  chapters: Record<string, string[]>;
+};
 
-// ✅ Proper typing
+const bibleModules = import.meta.glob(
+  "../data/bible/*.json",
+  { eager: true }
+) as Record<string, { default: BibleData }>;
+
+const allBooks = Object.values(bibleModules).map((m) => m.default);
+
 const books: Record<string, number[]> = {};
 
-// Group chapters by book
-for (const entry of entries) {
-  const book = entry.data.book;
-  books[book] ??= [];
-  books[book].push(entry.data.chapter);
+for (const bookData of allBooks) {
+  const slug = bookData.book.toLowerCase().replace(/\s+/g, "-");
+
+  books[slug] = Object.keys(bookData.chapters).map(Number);
+  books[slug].sort((a, b) => a - b);
 }
 
-// Sort chapters
-for (const book in books) {
-  books[book].sort((a: number, b: number) => a - b);
-}
-
-// Navigation logic
 const chapters = books[currentBook] ?? [];
 const index = chapters.indexOf(currentChapter);
 
@@ -34,22 +36,6 @@ const next = index < chapters.length - 1 ? chapters[index + 1] : null;
 
 <BaseLayout title={`${currentBook} ${currentChapter}`}>
 
-  <!-- 🔍 SEARCH + MOBILE MENU -->
-  <div class="mb-6 flex items-center gap-3">
-
-    <button id="menu-btn" class="md:hidden px-3 py-2 border rounded text-sm">
-      ☰ Bible
-    </button>
-
-    <input
-      id="bible-search"
-      type="text"
-      placeholder="Search (e.g. John 3)"
-      class="w-full md:w-80 px-3 py-2 rounded border border-[var(--color-border)] bg-transparent text-sm focus:outline-none"
-    />
-
-  </div>
-
   <div class="flex gap-8">
 
     <!-- 📚 SIDEBAR -->
@@ -57,218 +43,236 @@ const next = index < chapters.length - 1 ? chapters[index + 1] : null;
       id="sidebar"
       class="fixed md:static top-0 left-0 z-50 h-full w-64 -translate-x-full md:translate-x-0 bg-[var(--color-bg)] border-r border-[var(--color-border)] p-4 overflow-y-auto transition-transform duration-300"
     >
-
       <p class="text-xs uppercase text-[var(--color-muted)] mb-4">Bible</p>
 
       <div class="space-y-6">
-
-        {Object.entries(books).map(([book, chapters]: [string, number[]]) => (
+        {Object.entries(books).map(([slug, chapters]) => (
           <div>
-            <p class="font-medium capitalize mb-2">{book}</p>
+            <a
+              href={`/bible/${slug}/1`}
+              class={`font-semibold block ${
+                slug === currentBook ? "text-[var(--color-primary)]" : ""
+              }`}
+            >
+              {slug.replace(/-/g, " ")}
+            </a>
 
-            <div class="flex flex-wrap gap-2">
-              {chapters.map((c: number) => (
-                <a
-                  href={`/bible/${book}/${c}`}
-                  class={`px-2 py-1 text-sm rounded border ${
-                    book === currentBook && c === currentChapter
-                      ? "bg-[var(--color-primary)] text-white"
-                      : "border-[var(--color-border)] hover:bg-[var(--color-primary)]/10"
-                  }`}
-                >
-                  {c}
-                </a>
-              ))}
-            </div>
+            {slug === currentBook && (
+              <div class="flex flex-wrap gap-2 mt-2">
+                {chapters.map((c: number) => (
+                  <a
+                    href={`/bible/${slug}/${c}`}
+                    class={`px-2 py-1 text-sm rounded ${
+                      c === currentChapter
+                        ? "bg-[var(--color-primary)] text-white"
+                        : "border border-[var(--color-border)]"
+                    }`}
+                  >
+                    {c}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         ))}
-
       </div>
-
     </aside>
 
-    <!-- 🌫️ OVERLAY (mobile) -->
-    <div id="overlay" class="fixed inset-0 bg-black/40 hidden md:hidden"></div>
+    <!-- 🌫️ OVERLAY -->
+    <div
+      id="overlay"
+      class="fixed inset-0 bg-black/40 hidden md:hidden z-40"
+    ></div>
 
-    <!-- 📖 MAIN READER -->
-    <div class="flex-1 max-w-2xl mx-auto">
+    <!-- 📖 CONTENT -->
+    <main class="flex-1 max-w-2xl mx-auto p-6">
 
-      <!-- HEADER -->
-      <div class="sticky top-16 bg-[var(--color-bg)] z-20 pb-4 mb-6 border-b border-[var(--color-border)]">
-        <h1 class="text-2xl font-semibold capitalize">
-          {currentBook} {currentChapter}
-        </h1>
+      <!-- 📱 MOBILE HEADER -->
+      <div class="mb-4 flex items-center gap-3 md:hidden">
+        <button id="menu-btn" class="px-3 py-2 border rounded text-sm">
+          ☰ Bible
+        </button>
+
+        <span class="text-sm text-[var(--color-muted)]">
+          {currentBook.replace(/-/g, " ")} {currentChapter}
+        </span>
       </div>
 
-      <!-- CONTENT -->
-      <div class="space-y-4 text-lg leading-relaxed">
-        <slot />
+      <!-- 🔍 SEARCH -->
+      <div class="mb-6 relative">
+        <div class="flex gap-2">
+          <input
+            id="bible-search"
+            type="text"
+            placeholder="Search (e.g. John 3)"
+            class="flex-1 px-3 py-2 rounded border border-[var(--color-border)] text-sm"
+          />
+
+          <button
+            id="search-btn"
+            class="px-4 py-2 text-sm rounded bg-[var(--color-primary)] text-white"
+          >
+            Go
+          </button>
+        </div>
+
+        <div
+          id="search-results"
+          class="absolute left-0 right-0 mt-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded shadow hidden z-50 max-h-60 overflow-y-auto"
+        ></div>
       </div>
 
-      <!-- NAVIGATION -->
-      <div class="mt-12 flex justify-between text-sm text-[var(--color-muted)]">
+      <div class="mb-6">
+        <slot name="header" />
+      </div>
 
+      <slot />
+
+      <!-- 🔁 NAV -->
+      <div class="mt-12 flex justify-between text-sm">
         {prev ? (
           <a href={`/bible/${currentBook}/${prev}`}>
-            ← {currentBook} {prev}
+            ← Previous
           </a>
         ) : <span />}
 
         {next ? (
           <a href={`/bible/${currentBook}/${next}`}>
-            {currentBook} {next} →
+            Next →
           </a>
         ) : <span />}
-
       </div>
 
-    </div>
-
+    </main>
   </div>
 
-  <!-- ⚡ SCRIPT -->
- <script is:inline>
-  // =============================
-  // 📚 SIDEBAR
-  // =============================
-  const sidebar = document.getElementById("sidebar");
-  const menuBtn = document.getElementById("menu-btn");
-  const overlay = document.getElementById("overlay");
+  <!-- ✅ SAFE DATA -->
+  <div
+    id="bible-data"
+    data-books={JSON.stringify(
+      Object.keys(books).map((b) => b.replace(/-/g, " "))
+    )}
+    hidden
+  ></div>
 
-  const openSidebar = () => {
-    if (sidebar) sidebar.classList.remove("-translate-x-full");
-    if (overlay) overlay.classList.remove("hidden");
-  };
+  <!-- 🚀 SCRIPT -->
+  <script is:inline>
+    document.addEventListener("DOMContentLoaded", () => {
 
-  const closeSidebar = () => {
-    if (sidebar) sidebar.classList.add("-translate-x-full");
-    if (overlay) overlay.classList.add("hidden");
-  };
+      const input = document.getElementById("bible-search");
+      const button = document.getElementById("search-btn");
+      const results = document.getElementById("search-results");
 
-  if (menuBtn) menuBtn.addEventListener("click", openSidebar);
-  if (overlay) overlay.addEventListener("click", closeSidebar);
+      const sidebar = document.getElementById("sidebar");
+      const menuBtn = document.getElementById("menu-btn");
+      const overlay = document.getElementById("overlay");
 
-  // =============================
-  // 🔍 SEARCH
-  // =============================
-  const input = document.getElementById("bible-search");
-
-  const normalize = (str) => String(str).toLowerCase().trim();
-
-  const handleSearch = () => {
-    if (!(input instanceof HTMLInputElement)) return;
-
-    const value = normalize(input.value);
-    if (!value) return;
-
-    const parts = value.split(" ");
-
-    const lastPart = parts.length > 0 ? parts[parts.length - 1] : "";
-    const chapter = parseInt(lastPart) || 1;
-
-    const book = parts.slice(0, -1).join(" ").trim();
-    if (!book) return;
-
-    window.location.href = `/bible/${book}/${chapter}`;
-  };
-
-  if (input) {
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") handleSearch();
-    });
-  }
-
-  // =============================
-  // ✨ VERSE SYSTEM
-  // =============================
-  const STORAGE_KEY = "bible-bookmarks";
-
-  const getBookmarks = () => {
-    try {
-      const data = localStorage.getItem(STORAGE_KEY);
-      return data ? JSON.parse(data) : [];
-    } catch {
-      return [];
-    }
-  };
-
-  const saveBookmarks = (data) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  };
-
-  const toggleBookmark = (id) => {
-    let bookmarks = getBookmarks();
-
-    if (bookmarks.includes(id)) {
-      bookmarks = bookmarks.filter((b) => b !== id);
-    } else {
-      bookmarks.push(id);
-    }
-
-    saveBookmarks(bookmarks);
-    renderBookmarks();
-  };
-
-  const renderBookmarks = () => {
-    const bookmarks = getBookmarks();
-
-    document.querySelectorAll(".bible-verse").forEach((verse) => {
-      const id = verse.id;
-
-      if (!id) return;
-
-      if (bookmarks.includes(id)) {
-        verse.classList.add("ring-2", "ring-[var(--color-primary)]");
-      } else {
-        verse.classList.remove("ring-2", "ring-[var(--color-primary)]");
-      }
-    });
-  };
-
-  // =============================
-  // 👆 CLICK INTERACTION
-  // =============================
-  document.querySelectorAll(".bible-verse").forEach((verse) => {
-    verse.addEventListener("click", () => {
-      const id = verse.id;
-      if (!id) return;
-
-      // Remove previous highlight
-      document.querySelectorAll(".bible-verse").forEach((v) => {
-        v.classList.remove("bg-[var(--color-primary)]/10");
+      // 📚 Sidebar
+      menuBtn?.addEventListener("click", () => {
+        sidebar?.classList.remove("-translate-x-full");
+        overlay?.classList.remove("hidden");
       });
 
-      // Highlight
-      verse.classList.add("bg-[var(--color-primary)]/10");
+      overlay?.addEventListener("click", () => {
+        sidebar?.classList.add("-translate-x-full");
+        overlay?.classList.add("hidden");
+      });
 
-      // Update URL
-      window.history.replaceState(null, "", `#${id}`);
+      // 📖 Data
+      const dataEl = document.getElementById("bible-data");
 
-      // Copy link (safe)
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(window.location.href).catch(() => {});
+      let bookList = [];
+
+      try {
+        if (dataEl) {
+          bookList = JSON.parse(dataEl.dataset.books || "[]");
+        }
+      } catch {}
+
+      const normalize = (str) =>
+        String(str).toLowerCase().trim();
+
+      const slugify = (str) =>
+        normalize(str).replace(/\s+/g, "-");
+
+      const goTo = (value) => {
+        if (!value) return;
+
+        const parts = normalize(value).split(" ");
+        const last = parts[parts.length - 1];
+        const chapter = parseInt(last);
+
+        const book =
+          Number.isNaN(chapter)
+            ? value
+            : parts.slice(0, -1).join(" ");
+
+        if (!book) return;
+
+        const slug = slugify(book);
+        const finalChapter = Number.isNaN(chapter) ? 1 : chapter;
+
+        window.location.href = `/bible/${slug}/${finalChapter}`;
+      };
+
+      const renderResults = (matches) => {
+        if (!results) return;
+
+        results.innerHTML = "";
+
+        if (matches.length === 0) {
+          results.classList.add("hidden");
+          return;
+        }
+
+        matches.slice(0, 8).forEach((book) => {
+          const div = document.createElement("div");
+
+          div.className =
+            "px-3 py-2 cursor-pointer hover:bg-[var(--color-primary)]/10";
+
+          div.textContent = book;
+
+          div.onclick = () => goTo(book);
+
+          results.appendChild(div);
+        });
+
+        results.classList.remove("hidden");
+      };
+
+      // 🔍 INPUT
+      if (input instanceof HTMLInputElement) {
+        input.addEventListener("input", () => {
+          const value = normalize(input.value);
+
+          if (!value) {
+            results?.classList.add("hidden");
+            return;
+          }
+
+          const matches = bookList.filter((b) =>
+            normalize(b).includes(value)
+          );
+
+          renderResults(matches);
+        });
+
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            goTo(input.value);
+          }
+        });
       }
 
-      // Bookmark toggle
-      toggleBookmark(id);
+      // 🔘 BUTTON
+      button?.addEventListener("click", () => {
+        if (input instanceof HTMLInputElement) {
+          goTo(input.value);
+        }
+      });
+
     });
-  });
+  </script>
 
-  // =============================
-  // 🔗 LOAD HASH
-  // =============================
-  const hash = window.location.hash;
-
-  if (hash) {
-    const target = document.querySelector(hash);
-    if (target) {
-      target.classList.add("bg-[var(--color-primary)]/10");
-    }
-  }
-
-  // =============================
-  // 🚀 INIT
-  // =============================
-  renderBookmarks();
-</script>
 </BaseLayout>

@@ -1,26 +1,46 @@
 ---
-import { getCollection, type CollectionEntry } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
-type BibleEntry = CollectionEntry<'bible'>;
+type BibleData = {
+  book: string;
+  chapters: Record<string, string[]>;
+};
 
-const entries = await getCollection('bible');
+/**
+ * 🚀 Load ALL books from JSON
+ */
+const bibleModules = import.meta.glob(
+  '../../data/bible/*.json',
+  { eager: true }
+) as Record<string, { default: BibleData }>;
 
-//  Normalize + group by book
-const books: Record<string, BibleEntry[]> = Object.create(null);
+const allBooks = Object.values(bibleModules).map((mod) => mod.default);
 
-for (const entry of entries) {
-  const book = entry.data.book.toLowerCase();
+/**
+ * 📚 Normalize into same structure as before
+ */
+const books: Record<string, { chapter: number }[]> = Object.create(null);
 
-  if (!books[book]) books[book] = [];
-  books[book].push(entry);
+for (const bookData of allBooks) {
+  const bookName = bookData.book.toLowerCase();
+
+  books[bookName] = Object.keys(bookData.chapters).map((ch) => ({
+    chapter: Number(ch)
+  }));
 }
 
-//  Helper to format book name nicely
+/**
+ * 🧠 Helper
+ */
 const formatBook = (book: string) =>
   book.replace(/\b\w/g, (l) => l.toUpperCase());
 
-// Old Testament (lowercase)
+const slugify = (book: string) =>
+  book.toLowerCase().replace(/\s+/g, '-');
+
+/**
+ * 📖 Testament lists (same as yours)
+ */
 const oldTestament = [
   "genesis","exodus","leviticus","numbers","deuteronomy",
   "joshua","judges","ruth","1 samuel","2 samuel",
@@ -32,7 +52,6 @@ const oldTestament = [
   "haggai","zechariah","malachi"
 ];
 
-// New Testament (lowercase)
 const newTestament = [
   "matthew","mark","luke","john","acts","romans",
   "1 corinthians","2 corinthians","galatians","ephesians",
@@ -47,11 +66,11 @@ const newTestament = [
 
   <div class="max-w-5xl mx-auto px-4 py-16 space-y-16">
 
-
     <h1 class="text-3xl font-semibold">
-  The Holy <span class="text-[var(--color-primary)]">Bible</span>
-</h1>
+      The Holy <span class="text-[var(--color-primary)]">Bible</span>
+    </h1>
 
+    <!-- OLD TESTAMENT -->
     <section class="space-y-8">
       <h2 class="text-2xl font-semibold">Old Testament</h2>
 
@@ -60,25 +79,24 @@ const newTestament = [
         {oldTestament
           .filter((book) => books[book])
           .map((book) => {
-            const chapters = books[book]
-              .sort((a, b) => a.data.chapter - b.data.chapter);
+            const chapters = books[book].sort(
+              (a, b) => a.chapter - b.chapter
+            );
 
             return (
               <div class="rounded-2xl border border-[var(--color-border)] p-5 space-y-4 hover:bg-[var(--color-primary)]/5 transition">
-
 
                 <h3 class="font-semibold text-lg">
                   {formatBook(book)}
                 </h3>
 
-
                 <div class="flex flex-wrap gap-2">
                   {chapters.map((entry) => (
                     <a
-                      href={`/bible/${entry.data.book.toLowerCase()}/${entry.data.chapter}`}
+                      href={`/bible/${slugify(book)}/${entry.chapter}`}
                       class="px-2.5 py-1 text-sm rounded-md border border-[var(--color-border)] hover:bg-[var(--color-primary)]/10 transition"
                     >
-                      {entry.data.chapter}
+                      {entry.chapter}
                     </a>
                   ))}
                 </div>
@@ -90,7 +108,7 @@ const newTestament = [
       </div>
     </section>
 
-
+    <!-- NEW TESTAMENT -->
     <section class="space-y-8">
       <h2 class="text-2xl font-semibold">New Testament</h2>
 
@@ -99,25 +117,24 @@ const newTestament = [
         {newTestament
           .filter((book) => books[book])
           .map((book) => {
-            const chapters = books[book]
-              .sort((a, b) => a.data.chapter - b.data.chapter);
+            const chapters = books[book].sort(
+              (a, b) => a.chapter - b.chapter
+            );
 
             return (
               <div class="rounded-2xl border border-[var(--color-border)] p-5 space-y-4 hover:bg-[var(--color-primary)]/5 transition">
-
 
                 <h3 class="font-semibold text-lg">
                   {formatBook(book)}
                 </h3>
 
-
                 <div class="flex flex-wrap gap-2">
                   {chapters.map((entry) => (
                     <a
-                      href={`/bible/${entry.data.book.toLowerCase()}/${entry.data.chapter}`}
+                      href={`/bible/${slugify(book)}/${entry.chapter}`}
                       class="px-2.5 py-1 text-sm rounded-md border border-[var(--color-border)] hover:bg-[var(--color-primary)]/10 transition"
                     >
-                      {entry.data.chapter}
+                      {entry.chapter}
                     </a>
                   ))}
                 </div>

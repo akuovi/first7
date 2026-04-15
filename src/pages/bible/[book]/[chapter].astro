@@ -1,39 +1,68 @@
 ---
-import { getCollection, render, type CollectionEntry } from 'astro:content';
-import BibleLayout from '../../../layouts/BibleLayout.astro';
+export const prerender = false;
 
-type BibleEntry = CollectionEntry<'bible'>;
+import BibleLayout from "../../../layouts/BibleLayout.astro";
 
-export async function getStaticPaths() {
-  const entries = await getCollection('bible');
+const { book, chapter } = Astro.params as {
+  book: string;
+  chapter: string;
+};
 
-  return entries.map((entry) => ({
-    params: {
-      book: entry.data.book.toLowerCase(),
-      chapter: entry.data.chapter.toString()
-    },
-    props: { entry }
-  }));
+if (!book || !chapter) {
+  throw new Error("Missing route params");
 }
 
-const { entry } = Astro.props as { entry: BibleEntry };
+type BibleData = {
+  book: string;
+  chapters: Record<string, string[]>;
+};
 
-//  REQUIRED for MDX
-const { Content } = await render(entry);
+/**
+ * 🚀 Load ALL books (preloaded)
+ */
+const bibleModules = import.meta.glob(
+  "../../../data/bible/*.json",
+  { eager: true }
+) as Record<string, { default: BibleData }>;
+
+/**
+ * ✅ Find correct file using slug
+ */
+const fileKey = Object.keys(bibleModules).find((key) =>
+  key.endsWith(`${book.toLowerCase()}.json`)
+);
+
+let data: BibleData | null = null;
+let verses: string[] = [];
+
+if (fileKey) {
+  data = bibleModules[fileKey].default;
+
+  // ensure correct chapter format
+  const chapterKey = String(Number(chapter));
+  verses = data.chapters[chapterKey] || [];
+} else {
+  console.error("Book not found:", book);
+}
 ---
 
 <BibleLayout 
-  currentBook={entry.data.book.toLowerCase()} 
-  currentChapter={entry.data.chapter}
+  currentBook={book} 
+  currentChapter={Number(chapter)}
 >
-  
+
   <Fragment slot="header">
-    <h1 class="text-3xl font-semibold capitalize">
-      {entry.data.book} {entry.data.chapter}
+    <h1 class="text-2xl font-semibold capitalize">
+      {data?.book} {chapter}
     </h1>
   </Fragment>
 
-  <!--  THIS RENDERS YOUR MDX -->
-  <Content />
+  <div class="space-y-4 text-lg leading-relaxed">
+    {verses.map((verse: string, i: number) => (
+      <p id={`v${i + 1}`} class="bible-verse">
+        <span class="verse-number">{i + 1}</span> {verse}
+      </p>
+    ))}
+  </div>
 
 </BibleLayout>

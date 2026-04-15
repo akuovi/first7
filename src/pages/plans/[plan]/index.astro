@@ -1,23 +1,23 @@
 ---
-import { getCollection } from 'astro:content';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getStartPlanStaticPaths } from '../../../lib/start-plans';
 
 export async function getStaticPaths() {
-  const entries = await getCollection('start');
-  const plans = [...new Set(entries.map((entry) => entry.data.plan))];
+  const planPaths = await getStartPlanStaticPaths();
 
-  return plans.map((plan) => ({
-    params: { plan },
-    props: { plan }
+  return planPaths.map((planPath) => ({
+    params: { plan: planPath.plan },
+    props: {
+      plan: planPath.plan,
+      days: planPath.days
+    }
   }));
 }
 
-const { plan } = Astro.props as { plan: string };
-
-const entries = await getCollection('start');
-const days = entries
-  .filter((entry) => entry.data.plan === plan)
-  .sort((a, b) => a.data.day - b.data.day);
+const { plan, days } = Astro.props as {
+  plan: string;
+  days: Array<{ day: number; title: string }>;
+};
 
 const totalDays = days.length;
 ---
@@ -26,7 +26,7 @@ const totalDays = days.length;
 
   <div class="mx-auto max-w-2xl px-5 py-10 space-y-10">
 
-    <!-- 🧭 HEADER -->
+    <!-- HEADER -->
     <div class="space-y-3">
       <h1 class="text-3xl md:text-4xl font-semibold capitalize">
         {plan.replace(/-/g, ' ')}
@@ -37,7 +37,7 @@ const totalDays = days.length;
       </p>
     </div>
 
-    <!-- 🔁 CONTINUE -->
+    <!-- CONTINUE -->
     <div
       id="continue-box"
       class="hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-primary)]/10 p-6"
@@ -50,11 +50,11 @@ const totalDays = days.length;
         id="continue-link"
         class="mt-2 inline-block text-lg font-medium text-[var(--color-primary)]"
       >
-        Resume →
+        Resume ->
       </a>
     </div>
 
-    <!-- 📊 PROGRESS -->
+    <!-- PROGRESS -->
     <div class="space-y-3">
 
       <div class="flex justify-between text-sm text-[var(--color-muted)]">
@@ -71,24 +71,24 @@ const totalDays = days.length;
 
     </div>
 
-    <!-- 📅 DAYS -->
+    <!-- DAYS -->
     <div class="space-y-3">
 
-      {days.map((entry) => (
+      {days.map((dayEntry) => (
         <a
-          href={`/plans/${plan}/day-${entry.data.day}`}
-          data-day={entry.data.day}
+          href={`/plans/${plan}/day-${dayEntry.day}`}
+          data-day={dayEntry.day}
           class="group flex items-center justify-between rounded-xl border border-[var(--color-border)] p-4 transition hover:bg-[var(--color-primary)]/5"
         >
 
           <!-- LEFT -->
           <div>
             <p class="font-medium">
-              Day {entry.data.day}
+              Day {dayEntry.day}
             </p>
 
             <p class="text-sm text-[var(--color-muted)]">
-              {entry.data.title}
+              {dayEntry.title}
             </p>
           </div>
 
@@ -97,7 +97,7 @@ const totalDays = days.length;
             class="text-xs text-[var(--color-muted)] group-hover:text-[var(--color-primary)]"
             data-status
           >
-            →
+            ->
           </div>
 
         </a>
@@ -107,7 +107,6 @@ const totalDays = days.length;
 
   </div>
 
-  <!-- 🧠 SCRIPT -->
   <script is:inline define:vars={{ plan, totalDays }}>
     const getSavedDays = (storageKey) => {
       try {
@@ -122,7 +121,7 @@ const totalDays = days.length;
     const storageKey = `first7-${plan}`;
     const savedDays = getSavedDays(storageKey);
 
-    // 📊 PROGRESS
+    // PROGRESS
     const percent = totalDays === 0 ? 0 : Math.round((savedDays.length / totalDays) * 100);
 
     const progressBar = document.getElementById('progress-bar');
@@ -136,7 +135,7 @@ const totalDays = days.length;
       progressText.textContent = `${percent}%`;
     }
 
-    // ✅ MARK COMPLETED DAYS
+    // MARK COMPLETED DAYS
     savedDays.forEach((savedDay) => {
       const dayLink = document.querySelector(`[data-day="${savedDay}"]`);
       const status = dayLink?.querySelector('[data-status]');
@@ -146,11 +145,11 @@ const totalDays = days.length;
       }
 
       if (status) {
-        status.textContent = '✓';
+        status.textContent = 'Done';
       }
     });
 
-    // 🔁 CONTINUE FIXED LOGIC
+    // CONTINUE
     const continueBox = document.getElementById('continue-box');
     const continueLink = document.getElementById('continue-link');
     const continueText = document.getElementById('continue-text');
@@ -161,21 +160,19 @@ const totalDays = days.length;
 
       continueBox.classList.remove('hidden');
 
-      // ✅ COMPLETED PLAN
       if (lastDay >= totalDays) {
 
         continueLink.href = `/plans/${plan}`;
-        continueLink.textContent = "View your journey →";
+        continueLink.textContent = 'View your journey ->';
 
         if (continueText) {
-          continueText.textContent = "You've completed this plan 🎉";
+          continueText.textContent = "You've completed this plan.";
         }
 
       } else {
 
-        // ✅ NORMAL RESUME
         continueLink.href = `/plans/${plan}/day-${lastDay + 1}`;
-        continueLink.textContent = `Resume Day ${lastDay + 1} →`;
+        continueLink.textContent = `Resume Day ${lastDay + 1} ->`;
 
       }
     }

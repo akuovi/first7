@@ -1,35 +1,38 @@
 ---
-import { getCollection, render, type CollectionEntry } from 'astro:content';
+import { render } from 'astro:content';
 import VerseLink from '../../../components/VerseLink.astro';
+import {
+  getStartPlanDaysStaticPaths,
+  type StartEntry
+} from '../../../lib/start-plans';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 
-type StartEntry = CollectionEntry<'start'>;
-
 export async function getStaticPaths() {
-  const entries = await getCollection('start');
+  const dayPaths = await getStartPlanDaysStaticPaths();
 
-  return entries.map((entry) => ({
+  return dayPaths.map((dayPath) => ({
     params: {
-      plan: entry.data.plan.trim(),
-      day: `day-${entry.data.day}`
+      plan: dayPath.plan,
+      day: `day-${dayPath.entry.data.day}`
     },
-    props: { entry }
+    props: {
+      entry: dayPath.entry,
+      planDays: dayPath.planDays
+    }
   }));
 }
 
-const { entry } = Astro.props as { entry: StartEntry };
-
-const allEntries = await getCollection('start');
-
-const planEntries = allEntries
-  .filter((e) => e.data.plan === entry.data.plan)
-  .sort((a, b) => a.data.day - b.data.day);
+const { entry, planDays } = Astro.props as {
+  entry: StartEntry;
+  planDays: number[];
+};
 
 const { Content } = await render(entry);
 
-const plan = entry.data.plan;
+const plan = entry.data.plan.trim();
 const day = entry.data.day;
-const totalDays = planEntries.length;
+const totalDays = planDays.length;
+const nextHref = day < totalDays ? `/plans/${plan}/day-${day + 1}` : `/plans/${plan}`;
 ---
 
 <BaseLayout title={entry.data.title} full={true}>
@@ -45,7 +48,7 @@ const totalDays = planEntries.length;
           <div>
             <p class="text-sm text-[var(--color-muted)]">Plan</p>
             <h2 class="text-xl font-semibold capitalize">
-              {plan.replace(/-/g, " ")}
+              {plan.replace(/-/g, ' ')}
             </h2>
             <p class="text-xs text-[var(--color-muted)] mt-1">
               {totalDays} days
@@ -54,14 +57,14 @@ const totalDays = planEntries.length;
 
           <!-- DAYS -->
           <div class="space-y-2">
-            {planEntries.map((d) => (
+            {planDays.map((planDay) => (
               <a
-                href={`/plans/${plan}/day-${d.data.day}`}
+                href={`/plans/${plan}/day-${planDay}`}
                 class="flex justify-between px-3 py-2 rounded-lg text-sm transition"
-                data-day={d.data.day}
+                data-day={planDay}
               >
-                <span>Day {d.data.day}</span>
-                <span data-status={d.data.day}></span>
+                <span>Day {planDay}</span>
+                <span data-status></span>
               </a>
             ))}
           </div>
@@ -71,7 +74,7 @@ const totalDays = planEntries.length;
 
       <!-- MAIN -->
       <main>
-        <div class="max-w-2xl mx-auto space-y-12 py-6"></div>
+        <div class="max-w-2xl mx-auto space-y-12 py-6">
 
           <!-- PROGRESS -->
           <div class="space-y-3">
@@ -139,7 +142,7 @@ const totalDays = planEntries.length;
               id="complete-btn"
               class="w-full rounded-xl bg-[var(--color-primary)] px-6 py-4 text-white font-medium"
             >
-              Complete Day {day} →
+              Complete Day {day} ->
             </button>
           </div>
 
@@ -151,79 +154,75 @@ const totalDays = planEntries.length;
   </div>
 
   <!-- SCRIPT -->
-  <script is:inline define:vars={{ plan, day, totalDays }}>
+  <script is:inline define:vars={{ plan, day, totalDays, nextHref }}>
 
     const key = `first7-${plan}`;
     let saved = [];
 
     try {
-      saved = JSON.parse(localStorage.getItem(key) || "[]");
+      const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+      saved = Array.isArray(parsed) ? parsed.filter((value) => Number.isInteger(value)) : [];
     } catch {}
 
     // PROGRESS
     const percent = Math.round((saved.length / totalDays) * 100);
-    const progressText = document.getElementById("progress-text");
-    if (progressText) progressText.textContent = percent + "%";
+    const progressText = document.getElementById('progress-text');
+    if (progressText) progressText.textContent = percent + '%';
 
-    document.querySelectorAll("[data-bar]").forEach(el => {
-      const d = Number(el.getAttribute("data-bar"));
+    document.querySelectorAll('[data-bar]').forEach((el) => {
+      const d = Number(el.getAttribute('data-bar'));
       if (saved.includes(d)) {
-        el.classList.add("bg-[var(--color-primary)]");
+        el.classList.add('bg-[var(--color-primary)]');
       }
     });
 
-    // 🔒 LOCK LOGIC
+    // LOCK LOGIC
     const lastDay = saved.length > 0 ? Math.max(...saved) : 0;
 
-    document.querySelectorAll("[data-day]").forEach(link => {
-      const d = Number(link.getAttribute("data-day"));
-      const status = link.querySelector("[data-status]");
+    document.querySelectorAll('[data-day]').forEach((link) => {
+      const d = Number(link.getAttribute('data-day'));
+      const status = link.querySelector('[data-status]');
 
       if (saved.includes(d)) {
-        // ✅ completed
-        link.classList.add("bg-[var(--color-primary)]/10");
-        if (status) status.textContent = "✓";
+        link.classList.add('bg-[var(--color-primary)]/10');
+        if (status) status.textContent = 'Done';
       } else if (d === lastDay + 1) {
-        // ▶ current
-        link.classList.add("text-[var(--color-primary)]", "font-medium");
-        if (status) status.textContent = "→";
+        link.classList.add('text-[var(--color-primary)]', 'font-medium');
+        if (status) status.textContent = 'Now';
       } else {
-        // 🔒 locked
-        link.classList.add("opacity-50", "pointer-events-none");
-        if (status) status.textContent = "🔒";
+        link.classList.add('opacity-50', 'pointer-events-none');
+        if (status) status.textContent = 'Locked';
       }
     });
 
     // REFLECTION
     const reflectionKey = `reflection-${plan}-${day}`;
-    const textarea = document.getElementById("reflection");
-    const status = document.getElementById("save-status");
+    const textarea = document.getElementById('reflection');
+    const status = document.getElementById('save-status');
 
-    if (textarea) {
-      textarea.value = localStorage.getItem(reflectionKey) || "";
+    if (textarea instanceof HTMLTextAreaElement) {
+      textarea.value = localStorage.getItem(reflectionKey) || '';
 
-      textarea.addEventListener("input", () => {
+      textarea.addEventListener('input', () => {
         localStorage.setItem(reflectionKey, textarea.value);
-        if (status) status.textContent = "Saved";
+        if (status) status.textContent = 'Saved';
       });
     }
 
     // COMPLETE BUTTON
-    const btn = document.getElementById("complete-btn");
+    const btn = document.getElementById('complete-btn');
 
-    btn?.addEventListener("click", () => {
-
+    btn?.addEventListener('click', () => {
       if (!saved.includes(day)) {
         saved.push(day);
         localStorage.setItem(key, JSON.stringify(saved));
       }
 
-      btn.textContent = "Great job. Moving to next day...";
+      btn.textContent = 'Great job. Moving to next day...';
 
       setTimeout(() => {
-        window.location.href = `/plans/${plan}/day-${day + 1}`;
+        window.location.href = nextHref;
       }, 1200);
-
     });
 
   </script>

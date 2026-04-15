@@ -1,18 +1,9 @@
 ---
-import type { CollectionEntry } from 'astro:content';
-import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getStartPlanSummaries } from '../../lib/start-plans';
 
-const entries = await getCollection('start');
-const plans: Record<string, CollectionEntry<'start'>[]> = Object.create(null);
-
-for (const entry of entries) {
-  const plan = entry.data.plan;
-  plans[plan] ??= [];
-  plans[plan].push(entry);
-}
-
-const knownPlans = Object.keys(plans).sort();
+const planSummaries = await getStartPlanSummaries();
+const knownPlans = planSummaries.map((summary) => summary.plan);
 ---
 
 <BaseLayout>
@@ -42,22 +33,20 @@ const knownPlans = Object.keys(plans).sort();
     <!-- PLANS GRID -->
     <div class="grid gap-6 md:grid-cols-2">
 
-      {Object.entries(plans)
-        .sort(([left], [right]) => left.localeCompare(right))
-        .map(([plan, days]) => (
+      {planSummaries.map((summary) => (
 
           <a
-            href={`/plans/${plan}`}
+            href={`/plans/${summary.plan}`}
             class="group p-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] hover:shadow-md transition"
           >
             <div class="flex items-center justify-between">
 
               <h2 class="text-xl font-semibold capitalize">
-                {plan.replace(/-/g, ' ')}
+                {summary.plan.replace(/-/g, ' ')}
               </h2>
 
               <span class="text-sm text-[var(--color-muted)]">
-                {days.length} days
+                {summary.entries.length} days
               </span>
 
             </div>

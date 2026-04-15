@@ -1,9 +1,8 @@
 ---
-import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getStartPlanSummaries } from '../../lib/start-plans';
 
-const entries = await getCollection('start');
-const plans = [...new Set(entries.map((e) => e.data.plan))];
+const planSummaries = await getStartPlanSummaries();
 ---
 
 <BaseLayout title="Start">
@@ -65,13 +64,13 @@ const plans = [...new Set(entries.map((e) => e.data.plan))];
 
       <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
 
-        {plans.map((plan) => (
+        {planSummaries.map((summary) => (
           <a
-            href={`/plans/${plan}`}
+            href={`/plans/${summary.plan}`}
             class="group block rounded-2xl border border-[var(--color-border)] p-6 transition hover:-translate-y-1 hover:shadow-md hover:border-[var(--color-primary)]"
           >
             <h3 class="text-lg font-semibold capitalize group-hover:text-[var(--color-primary)] transition">
-              {plan.replace(/-/g, " ")}
+              {summary.plan.replace(/-/g, " ")}
             </h3>
 
             <p class="mt-2 text-sm text-[var(--color-muted)]">

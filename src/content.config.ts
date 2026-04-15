@@ -31,13 +31,6 @@ const blog = defineCollection({
 /* =========================
    📜 BIBLE (OPTIONAL - KEEP OR REMOVE LATER)
 ========================= */
-const bible = defineCollection({
-  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/bible' }),
-  schema: z.object({
-    book: z.string(),
-    chapter: z.number()
-  })
-});
 
 /* =========================
    📥 RESOURCES
@@ -86,7 +79,6 @@ const guides = defineCollection({
 export const collections = {
   reflections,
   blog,
-  bible,
   resources,
   start,
   guides

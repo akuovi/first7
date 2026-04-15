@@ -1,90 +1,64 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-const inputDir = path.join(__dirname, 'raw-bible');
-const outputDir = path.join(__dirname, '../src/content/bible');
+const inputDir = path.join(__dirname, "../src/content/bible");
+const outputDir = path.join(__dirname, "../src/data/bible");
 
-// 🧹 Clear old files
-if (fs.existsSync(outputDir)) {
-  fs.readdirSync(outputDir).forEach((file) => {
-    if (file.endsWith('.mdx')) {
-      fs.unlinkSync(path.join(outputDir, file));
-    }
-  });
-} else {
+if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
 }
 
-// Convert book name → slug
-const slugify = (str) =>
-  str.toLowerCase().replace(/\s+/g, ' ').trim();
+function extractVerses(content) {
+  const regex = /<p[^>]*><span[^>]*>\d+<\/span>(.*?)<\/p>/g;
+  const verses = [];
+  let match;
 
-const files = fs.readdirSync(inputDir);
+  while ((match = regex.exec(content)) !== null) {
+    verses.push(match[1].trim());
+  }
 
-files.forEach((file) => {
-  if (!file.endsWith('.md')) return;
+  return verses;
+}
 
-  const raw = fs.readFileSync(path.join(inputDir, file), 'utf-8');
+function processFiles() {
+  const files = fs.readdirSync(inputDir);
 
-  const bookName = file.replace('.md', '');
-  const bookSlug = slugify(bookName);
+  const books = {};
 
-  // Split by chapters
-  const chapters = raw.split(/## CHAPTER \d+/i);
+  files.forEach(file => {
+    const filePath = path.join(inputDir, file);
+    const content = fs.readFileSync(filePath, "utf-8");
 
-  // Extract chapter numbers
-  const chapterNumbers = [...raw.matchAll(/## CHAPTER (\d+)/gi)].map(
-    (m) => parseInt(m[1])
-  );
+    // Extract book + chapter
+    const bookMatch = content.match(/book:\s*"(.*?)"/);
+    const chapterMatch = content.match(/chapter:\s*(\d+)/);
 
-  chapters.shift(); // remove intro
+    if (!bookMatch || !chapterMatch) return;
 
-  chapters.forEach((chapterText, index) => {
-    const chapterNumber = chapterNumbers[index];
-    if (!chapterNumber) return;
+    const book = bookMatch[1];
+    const chapter = chapterMatch[1];
 
-    const lines = chapterText.split('\n');
+    const verses = extractVerses(content);
 
-    const verses = [];
-    let verseCount = 1;
+    if (!books[book]) {
+      books[book] = {
+        book,
+        chapters: {}
+      };
+    }
 
-    lines.forEach((line) => {
-      const cleaned = line
-        .replace(/^\*\*\d+\*\*\s*/, '') // **1**
-        .replace(/^\d+\s+/, '')         // 1 text
-        .trim();
-
-      // Skip junk
-      if (!cleaned) return;
-      if (cleaned.toLowerCase().startsWith('chapter')) return;
-      if (cleaned.startsWith('#')) return;
-
-      verses.push(
-        `<p id="v${verseCount}" class="bible-verse"><span class="verse-number">${verseCount}</span> ${cleaned}</p>`
-      );
-
-      verseCount++;
-    });
-
-    const versesHtml = verses.join('\n\n');
-
-    const content = `---
-book: "${bookSlug}"
-chapter: ${chapterNumber}
----
-
-## ${bookName} ${chapterNumber}
-
-${versesHtml}
-`;
-
-    const fileName = `${bookSlug}-${chapterNumber}.mdx`;
-    const filePath = path.join(outputDir, fileName);
-
-    fs.writeFileSync(filePath, content);
+    books[book].chapters[chapter] = verses;
   });
 
-  console.log(`Converted ${bookName}`);
-});
+  // Save each book
+  Object.keys(books).forEach(book => {
+    const safeName = book.replace(/\s+/g, "-");
+    const filePath = path.join(outputDir, `${safeName}.json`);
 
-console.log('All books converted successfully.');
+    fs.writeFileSync(filePath, JSON.stringify(books[book], null, 2));
+  });
+
+  console.log("✅ Bible converted successfully!");
+}
+
+processFiles();
